@@ -101,10 +101,26 @@ export function createMiddleware(
 }
 
 /**
- * Middleware to require localhost-only access
+ * Middleware to require localhost-only access (adapts to remote mode)
  * Used for admin endpoints that should not be exposed when binding to 0.0.0.0
  */
 export function requireLocalhost(req: Request, res: Response, next: NextFunction): void {
+  const settings = SettingsDefaultsManager.loadFromFile(USER_SETTINGS_PATH);
+
+  // Remote mode: allow if CLAUDE_MEM_ALLOW_REMOTE_ADMIN is true
+  if (settings.CLAUDE_MEM_REMOTE_MODE === 'true' && settings.CLAUDE_MEM_ALLOW_REMOTE_ADMIN === 'true') {
+    // Optional: Log remote admin access for audit
+    const clientIp = req.ip || req.connection.remoteAddress || '';
+    logger.info('ADMIN', 'Remote admin access', {
+      endpoint: req.path,
+      clientIp,
+      method: req.method
+    });
+    next();
+    return;
+  }
+
+  // Local mode: require localhost only
   const clientIp = req.ip || req.connection.remoteAddress || '';
   const isLocalhost =
     clientIp === '127.0.0.1' ||
@@ -120,7 +136,7 @@ export function requireLocalhost(req: Request, res: Response, next: NextFunction
     });
     res.status(403).json({
       error: 'Forbidden',
-      message: 'Admin endpoints are only accessible from localhost'
+      message: 'Admin endpoints are only accessible from localhost (enable CLAUDE_MEM_ALLOW_REMOTE_ADMIN for remote access)'
     });
     return;
   }
