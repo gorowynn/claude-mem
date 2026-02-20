@@ -196,6 +196,32 @@ See [Architecture Overview](https://docs.claude-mem.ai/architecture/overview) fo
 
 ---
 
+## Remote Server Mode
+
+claude-mem can run on a central server accessible from multiple machines via VPN or local network. See [Remote Server Deployment](docs/remote-server-setup.md) for detailed instructions.
+
+**Quick Start:**
+
+Server (`~/.claude-mem/settings.json`):
+```json
+{
+  "CLAUDE_MEM_REMOTE_MODE": "true",
+  "CLAUDE_MEM_WORKER_HOST": "0.0.0.0",
+  "CLAUDE_MEM_ALLOWED_ORIGINS": "http://192.168.1.100,http://192.168.1.101"
+}
+```
+
+Client (`~/.claude-mem/settings.json`):
+```json
+{
+  "CLAUDE_MEM_WORKER_HOST": "192.168.1.50"
+}
+```
+
+**Security:** Remote mode is opt-in only. Use VPN/tunnel for secure access. See [Remote Server Deployment](docs/remote-server-setup.md) for security details.
+
+---
+
 ## MCP Search Tools
 
 Claude-Mem provides intelligent memory search through **5 MCP tools** following a token-efficient **3-layer workflow pattern**:
