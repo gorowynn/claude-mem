@@ -96,8 +96,9 @@ export function clearPortCache(): void {
  */
 async function isWorkerHealthy(): Promise<boolean> {
   const port = getWorkerPort();
+  const host = getWorkerHost();
   const response = await fetchWithTimeout(
-    `http://127.0.0.1:${port}/api/health`, {}, HEALTH_CHECK_TIMEOUT_MS
+    `http://${host}:${port}/api/health`, {}, HEALTH_CHECK_TIMEOUT_MS
   );
   return response.ok;
 }
@@ -126,8 +127,9 @@ function getPluginVersion(): string {
  */
 async function getWorkerVersion(): Promise<string> {
   const port = getWorkerPort();
+  const host = getWorkerHost();
   const response = await fetchWithTimeout(
-    `http://127.0.0.1:${port}/api/version`, {}, HEALTH_CHECK_TIMEOUT_MS
+    `http://${host}:${port}/api/version`, {}, HEALTH_CHECK_TIMEOUT_MS
   );
   if (!response.ok) {
     throw new Error(`Failed to get worker version: ${response.status}`);
