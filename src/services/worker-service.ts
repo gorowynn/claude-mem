@@ -378,6 +378,25 @@ export class WorkerService {
 
       const settings = SettingsDefaultsManager.loadFromFile(USER_SETTINGS_PATH);
 
+      // Validate remote mode configuration
+      if (settings.CLAUDE_MEM_REMOTE_MODE === 'true') {
+        if (settings.CLAUDE_MEM_WORKER_HOST === '127.0.0.1' ||
+            settings.CLAUDE_MEM_WORKER_HOST === 'localhost') {
+          logger.warn('SYSTEM', 'REMOTE_MODE enabled but WORKER_HOST is still localhost. Set WORKER_HOST to 0.0.0.0 for external access');
+        }
+
+        if (!settings.CLAUDE_MEM_ALLOWED_ORIGINS) {
+          logger.warn('SYSTEM', 'REMOTE_MODE enabled but no ALLOWED_ORIGINS configured. CORS will block browser requests');
+        }
+
+        logger.info('SYSTEM', 'Remote server mode enabled', {
+          host: settings.CLAUDE_MEM_WORKER_HOST,
+          port: settings.CLAUDE_MEM_WORKER_PORT,
+          allowedOrigins: settings.CLAUDE_MEM_ALLOWED_ORIGINS || 'none',
+          allowRemoteAdmin: settings.CLAUDE_MEM_ALLOW_REMOTE_ADMIN
+        });
+      }
+
       // One-time chroma wipe for users upgrading from versions with duplicate worker bugs.
       // Only runs in local mode (chroma is local-only). Backfill at line ~414 rebuilds from SQLite.
       if (settings.CLAUDE_MEM_MODE === 'local' || !settings.CLAUDE_MEM_MODE) {
