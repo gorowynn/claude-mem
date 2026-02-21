@@ -66,6 +66,7 @@
       --color-accent-summary: #9a6700;
       --color-accent-prompt: #8250df;
       --color-accent-observation: #0550ae;
+      --color-accent-project: #d97706;
 
       --color-type-badge-bg: rgba(9, 105, 218, 0.12);
       --color-type-badge-text: #0969da;
@@ -332,6 +333,7 @@
         --color-accent-summary: #f2cc60;
         --color-accent-prompt: #8e6cdb;
         --color-accent-observation: #79b8ff;
+        --color-accent-project: #fbbf24;
 
         --color-type-badge-bg: rgba(88, 166, 255, 0.125);
         --color-type-badge-text: #58a6ff;
@@ -3276,6 +3278,79 @@
 
       .toggle-switch.on .toggle-knob {
         transform: translateX(16px);
+      }
+
+      /* Project Card Styles */
+      .project-card {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        background-color: var(--color-bg-card);
+        border: 1px solid var(--color-border-primary);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        animation: project-card-slide-in 0.3s ease-out forwards;
+        opacity: 0;
+      }
+
+      .project-card:hover {
+        background-color: var(--color-bg-card-hover);
+        border-color: var(--color-border-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .project-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .project-card-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+        margin: 0;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .project-card-count {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--color-text-secondary);
+        background-color: var(--color-bg-stat);
+        padding: 2px 8px;
+        border-radius: 12px;
+        margin-left: 8px;
+        flex-shrink: 0;
+      }
+
+      .project-card-footer {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .project-card-time {
+        font-size: 12px;
+        color: var(--color-text-muted);
+      }
+
+      @keyframes project-card-slide-in {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
     }
   </style>
