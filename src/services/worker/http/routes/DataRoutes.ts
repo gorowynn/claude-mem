@@ -18,7 +18,6 @@ import { SessionManager } from '../../SessionManager.js';
 import { SSEBroadcaster } from '../../SSEBroadcaster.js';
 import type { WorkerService } from '../../../worker-service.js';
 import { BaseRouteHandler } from '../BaseRouteHandler.js';
-import type { ProjectStats } from '../../../../ui/viewer/types.js';
 
 export class DataRoutes extends BaseRouteHandler {
   constructor(
@@ -48,7 +47,6 @@ export class DataRoutes extends BaseRouteHandler {
     // Metadata endpoints
     app.get('/api/stats', this.handleGetStats.bind(this));
     app.get('/api/projects', this.handleGetProjects.bind(this));
-    app.get('/api/projects/stats', this.handleGetProjectStats.bind(this));
 
     // Processing status endpoints
     app.get('/api/processing-status', this.handleGetProcessingStatus.bind(this));
@@ -261,45 +259,6 @@ export class DataRoutes extends BaseRouteHandler {
     const projects = rows.map(row => row.project);
 
     res.json({ projects });
-  });
-
-  /**
-   * Get project statistics with counts and last activity
-   * GET /api/projects/stats
-   */
-  private handleGetProjectStats = this.wrapHandler((req: Request, res: Response): void => {
-    const db = this.dbManager.getSessionStore().db;
-
-    // Query project stats from observations, summaries, and prompts
-    const rows = db.prepare(`
-      SELECT
-        project,
-        COUNT(*) as totalCount,
-        MAX(created_at_epoch) as lastActivityEpoch
-      FROM (
-        SELECT project, created_at_epoch FROM observations
-        UNION ALL
-        SELECT project, created_at_epoch FROM session_summaries
-        UNION ALL
-        SELECT s.project, up.created_at_epoch
-        FROM user_prompts up
-        JOIN sdk_sessions s ON up.content_session_id = s.content_session_id
-      )
-      WHERE project IS NOT NULL
-      GROUP BY project
-      ORDER BY lastActivityEpoch DESC
-    `).all() as Array<{ project: string; totalCount: number; lastActivityEpoch: number }>;
-
-    const projects: ProjectStats[] = rows.map(row => ({
-      project: row.project,
-      totalCount: row.totalCount,
-      lastActivityEpoch: row.lastActivityEpoch
-    }));
-
-    res.json({
-      projects,
-      totalProjects: projects.length
-    });
   });
 
   /**

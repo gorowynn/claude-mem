@@ -14,8 +14,6 @@ interface HeaderProps {
   themePreference: ThemePreference;
   onThemeChange: (theme: ThemePreference) => void;
   onContextPreviewToggle: () => void;
-  onSidebarToggle: () => void;
-  isSidebarOpen: boolean;
 }
 
 export function Header({
@@ -27,26 +25,12 @@ export function Header({
   queueDepth,
   themePreference,
   onThemeChange,
-  onContextPreviewToggle,
-  onSidebarToggle,
-  isSidebarOpen
+  onContextPreviewToggle
 }: HeaderProps) {
   useSpinningFavicon(isProcessing);
 
   return (
     <div className="header">
-      <button
-        className="sidebar-toggle-btn sidebar-toggle-left"
-        onClick={(e) => onSidebarToggle(e.shiftKey)}
-        title={isSidebarOpen ? "Close Sidebar (Shift+Click to keep open)" : "Open Sidebar (Shift+Click to keep open)"}
-        aria-label="Toggle sidebar"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="3" y1="12" x2="21" y2="12"></line>
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <line x1="3" y1="18" x2="21" y2="18"></line>
-        </svg>
-      </button>
       <h1>
         <div style={{ position: 'relative', display: 'inline-block' }}>
           <img src="claude-mem-logomark.webp" alt="" className={`logomark ${isProcessing ? 'spinning' : ''}`} />
@@ -94,20 +78,15 @@ export function Header({
           </svg>
         </a>
         <GitHubStarsButton username="thedotmack" repo="claude-mem" />
-        <div className="project-filter-wrapper">
-          <svg className="project-filter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-          </svg>
-          <select
-            value={currentFilter}
-            onChange={e => onFilterChange(e.target.value)}
-          >
-            <option value="">All Projects</option>
-            {projects.map(project => (
-              <option key={project} value={project}>{project}</option>
-            ))}
-          </select>
-        </div>
+        <select
+          value={currentFilter}
+          onChange={e => onFilterChange(e.target.value)}
+        >
+          <option value="">All Projects</option>
+          {projects.map(project => (
+            <option key={project} value={project}>{project}</option>
+          ))}
+        </select>
         <ThemeToggle
           preference={themePreference}
           onThemeChange={onThemeChange}
