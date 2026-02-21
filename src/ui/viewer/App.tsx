@@ -65,8 +65,12 @@ export function App() {
   }, []);
 
   // Toggle sidebar
-  const toggleSidebar = useCallback(() => {
-    setSidebarOpen(prev => !prev);
+  const toggleSidebar = useCallback((keepOpen = false) => {
+    if (keepOpen) {
+      setSidebarOpen(true);
+    } else {
+      setSidebarOpen(prev => !prev);
+    }
   }, []);
 
   // Handle loading more data

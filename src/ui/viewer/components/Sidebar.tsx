@@ -41,12 +41,63 @@ export function Sidebar({
     return () => window.removeEventListener('keydown', handleEsc);
   }, [isOpen, onClose]);
 
+  // Focus trap for accessibility
+  React.useEffect(() => {
+    if (isOpen) {
+      const sidebarElement = document.querySelector('.sidebar');
+      if (sidebarElement) {
+        // Set initial focus to the close button
+        const closeButton = sidebarElement.querySelector('.sidebar-close-button');
+        if (closeButton) {
+          (closeButton as HTMLElement).focus();
+        }
+
+        // Focus trap function
+        const handleTab = (e: KeyboardEvent) => {
+          if (e.key !== 'Tab') return;
+
+          const focusableElements = sidebarElement.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          );
+
+          const firstElement = focusableElements[0] as HTMLElement;
+          const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+          if (e.shiftKey) {
+            if (document.activeElement === firstElement) {
+              e.preventDefault();
+              lastElement.focus();
+            }
+          } else {
+            if (document.activeElement === lastElement) {
+              e.preventDefault();
+              firstElement.focus();
+            }
+          }
+        };
+
+        sidebarElement.addEventListener('keydown', handleTab);
+        return () => sidebarElement.removeEventListener('keydown', handleTab);
+      }
+    }
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
     <>
-      <div className={`sidebar-backdrop ${isOpen ? 'visible' : ''}`} onClick={handleBackdropClick} />
-      <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+      <div
+        className={`sidebar-backdrop ${isOpen ? 'visible' : ''}`}
+        onClick={handleBackdropClick}
+        aria-hidden="true"
+      />
+      <aside
+        className={`sidebar ${isOpen ? 'open' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Project Sidebar"
+        aria-hidden={!isOpen}
+      >
         <SidebarHeader onClose={onClose} />
         <SidebarContent
           stats={stats}

@@ -11,6 +11,13 @@ interface ProjectCardProps {
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onClick }) => {
   const animationDelay = (index % 8) * 50; // Stagger animation: 0, 50, 100, 150, 200, 250, 300, 350ms
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
   return (
     <div
       className="project-card"
@@ -22,9 +29,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onClick }) =>
         animationFillMode: 'forwards'
       }}
       onClick={onClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="button"
+      aria-label={`Select project ${project.project}`}
     >
       <div className="project-card-header">
-        <h3 className="project-card-title">{project.project}</h3>
+        <h3 className="project-card-title" title={project.project}>{project.project}</h3>
         <span className="project-card-count">{project.totalCount}</span>
       </div>
       <div className="project-card-footer">

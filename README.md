@@ -140,6 +140,7 @@ The installer handles dependencies, plugin setup, AI provider configuration, wor
 - 🖥️ **Web Viewer UI** - Real-time memory stream at http://localhost:37777
   - **Type-Based Visual Distinction:** Observation cards display color-coded badges and left borders based on type (🔴 bugfix, 🟣 feature, 🔄 refactor, ✅ change, 🔵 discovery, ⚖️ decision)
   - **Enhanced Project Filter:** Improved dropdown with folder icon and wider display for better project navigation
+  - **Project Sidebar:** Interactive sidebar with project statistics, search, and filtering capabilities with keyboard navigation support
 - 💻 **Claude Desktop Skill** - Search memory from Claude Desktop conversations
 - 🔒 **Privacy Control** - Use `<private>` tags to exclude sensitive content from storage
 - ⚙️ **Context Configuration** - Fine-grained control over what context gets injected
@@ -268,6 +269,31 @@ save_memory(text="API requires auth header X-API-Key", title="API Auth")
 See [Search Tools Guide](https://docs.claude-mem.ai/usage/search-tools) for detailed examples.
 
 ---
+
+## Project Sidebar
+
+The web viewer includes an advanced **Project Sidebar** for enhanced project navigation and management:
+
+### Features:
+- **Project Statistics**: View project activity counts and last access times
+- **Quick Filtering**: Instantly filter observations by project
+- **Search Integration**: Browse and select projects with live search
+- **Keyboard Navigation**:
+  - ESC to close sidebar
+  - Tab/Shift+Tab to navigate between interactive elements
+  - Enter/Space to select projects
+- **Accessibility**: Full ARIA support with focus trapping and screen reader compatibility
+- **Responsive Design**: Adaptive layout for all screen sizes
+- **Keyboard Shortcuts**:
+  - Click sidebar button to toggle
+  - Shift+Click to keep sidebar open while selecting a project
+
+### How to Use:
+1. Click the sidebar icon (≡) in the header to open the sidebar
+2. Browse projects with their activity statistics
+3. Click any project to filter all observations by that project
+4. Use the search box to quickly find specific projects
+5. Click the close button (X) or press ESC to exit the sidebar
 
 ## Beta Features
 

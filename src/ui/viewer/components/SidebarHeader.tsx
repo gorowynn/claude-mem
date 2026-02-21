@@ -9,7 +9,7 @@ export function SidebarHeader({ onClose }: SidebarHeaderProps) {
     <div className="sidebar-header">
       <h1>Projects</h1>
       <button
-        className="sidebar-close-btn"
+        className="sidebar-close-btn sidebar-close-button"
         onClick={onClose}
         aria-label="Close sidebar"
       >
