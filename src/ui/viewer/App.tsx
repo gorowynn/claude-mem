@@ -3,9 +3,11 @@ import { Header } from './components/Header';
 import { Feed } from './components/Feed';
 import { ContextSettingsModal } from './components/ContextSettingsModal';
 import { LogsDrawer } from './components/LogsModal';
+import { Sidebar } from './components/Sidebar';
 import { useSSE } from './hooks/useSSE';
 import { useSettings } from './hooks/useSettings';
 import { useStats } from './hooks/useStats';
+import { useProjectStats } from './hooks/useProjectStats';
 import { usePagination } from './hooks/usePagination';
 import { useTheme } from './hooks/useTheme';
 import { Observation, Summary, UserPrompt } from './types';
@@ -15,6 +17,7 @@ export function App() {
   const [currentFilter, setCurrentFilter] = useState('');
   const [contextPreviewOpen, setContextPreviewOpen] = useState(false);
   const [logsModalOpen, setLogsModalOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [paginatedObservations, setPaginatedObservations] = useState<Observation[]>([]);
   const [paginatedSummaries, setPaginatedSummaries] = useState<Summary[]>([]);
   const [paginatedPrompts, setPaginatedPrompts] = useState<UserPrompt[]>([]);
@@ -23,6 +26,7 @@ export function App() {
   const { settings, saveSettings, isSaving, saveStatus } = useSettings();
   const { stats, refreshStats } = useStats();
   const { preference, resolvedTheme, setThemePreference } = useTheme();
+  const { stats: projectStats } = useProjectStats(sidebarOpen);
   const pagination = usePagination(currentFilter);
 
   // When filtering by project: ONLY use paginated data (API-filtered)
@@ -58,6 +62,15 @@ export function App() {
   // Toggle logs modal
   const toggleLogsModal = useCallback(() => {
     setLogsModalOpen(prev => !prev);
+  }, []);
+
+  // Toggle sidebar
+  const toggleSidebar = useCallback((keepOpen = false) => {
+    if (keepOpen) {
+      setSidebarOpen(true);
+    } else {
+      setSidebarOpen(prev => !prev);
+    }
   }, []);
 
   // Handle loading more data
@@ -104,6 +117,8 @@ export function App() {
         themePreference={preference}
         onThemeChange={setThemePreference}
         onContextPreviewToggle={toggleContextPreview}
+        onSidebarToggle={toggleSidebar}
+        isSidebarOpen={sidebarOpen}
       />
 
       <Feed
@@ -139,6 +154,21 @@ export function App() {
         isOpen={logsModalOpen}
         onClose={toggleLogsModal}
       />
+
+      {sidebarOpen && (
+        <Sidebar
+          isOpen={sidebarOpen}
+          onClose={toggleSidebar}
+          stats={projectStats}
+          isLoading={projectStats.length === 0}
+          error={null}
+          currentFilter={currentFilter}
+          onProjectSelect={(project) => {
+            setCurrentFilter(project);
+            toggleSidebar();
+          }}
+        />
+      )}
     </>
   );
 }

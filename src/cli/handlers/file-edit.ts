@@ -6,7 +6,7 @@
  */
 
 import type { EventHandler, NormalizedHookInput, HookResult } from '../types.js';
-import { ensureWorkerRunning, getWorkerPort } from '../../shared/worker-utils.js';
+import { ensureWorkerRunning, getWorkerPort, getWorkerHost } from '../../shared/worker-utils.js';
 import { logger } from '../../utils/logger.js';
 import { HOOK_EXIT_CODES } from '../../shared/hook-constants.js';
 
@@ -40,7 +40,8 @@ export const fileEditHandler: EventHandler = {
     // Send to worker as an observation with file edit metadata
     // The observation handler on the worker will process this appropriately
     try {
-      const response = await fetch(`http://127.0.0.1:${port}/api/sessions/observations`, {
+      const host = getWorkerHost();
+      const response = await fetch(`http://${host}:${port}/api/sessions/observations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

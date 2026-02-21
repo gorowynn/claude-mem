@@ -45,7 +45,7 @@ export function ObservationCard({ observation }: ObservationCardProps) {
   const hasFactsContent = facts.length > 0 || concepts.length > 0 || filesRead.length > 0 || filesModified.length > 0;
 
   return (
-    <div className="card">
+    <div className={`card type-${observation.type}`}>
       {/* Header with toggle buttons in top right */}
       <div className="card-header">
         <div className="card-header-left">

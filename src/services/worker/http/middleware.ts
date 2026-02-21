@@ -10,6 +10,8 @@ import cors from 'cors';
 import path from 'path';
 import { getPackageRoot } from '../../../shared/paths.js';
 import { logger } from '../../../utils/logger.js';
+import { SettingsDefaultsManager } from '../../../shared/SettingsDefaultsManager.js';
+import { USER_SETTINGS_PATH } from '../../../shared/paths.js';
 
 /**
  * Create all middleware for the worker service
@@ -24,14 +26,36 @@ export function createMiddleware(
   // JSON parsing with 50mb limit
   middlewares.push(express.json({ limit: '50mb' }));
 
-  // CORS - restrict to localhost origins only
+  // CORS - restrict origins based on mode
   middlewares.push(cors({
     origin: (origin, callback) => {
-      // Allow: requests without Origin header (hooks, curl, CLI tools)
-      // Allow: localhost and 127.0.0.1 origins
-      if (!origin ||
-          origin.startsWith('http://localhost:') ||
-          origin.startsWith('http://127.0.0.1:')) {
+      // No Origin header: hooks, curl, CLI tools - always allow
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      const settings = SettingsDefaultsManager.loadFromFile(USER_SETTINGS_PATH);
+
+      // Remote mode: check whitelist
+      if (settings.CLAUDE_MEM_REMOTE_MODE === 'true') {
+        const allowedOrigins = settings.CLAUDE_MEM_ALLOWED_ORIGINS?.split(',') || [];
+        const allowed = allowedOrigins.some(allowedOrigin => {
+          const allowedBase = allowedOrigin.trim().split(':')[0]; // Strip port
+          return origin.startsWith(allowedBase) || origin.startsWith(`http://${allowedBase}`);
+        });
+
+        if (allowed) {
+          callback(null, true);
+        } else {
+          logger.warn('CORS', 'Origin not in whitelist', { origin });
+          callback(new Error('CORS not allowed'));
+        }
+        return;
+      }
+
+      // Local mode: only localhost and 127.0.0.1
+      if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
         callback(null, true);
       } else {
         callback(new Error('CORS not allowed'));
@@ -77,10 +101,26 @@ export function createMiddleware(
 }
 
 /**
- * Middleware to require localhost-only access
+ * Middleware to require localhost-only access (adapts to remote mode)
  * Used for admin endpoints that should not be exposed when binding to 0.0.0.0
  */
 export function requireLocalhost(req: Request, res: Response, next: NextFunction): void {
+  const settings = SettingsDefaultsManager.loadFromFile(USER_SETTINGS_PATH);
+
+  // Remote mode: allow if CLAUDE_MEM_ALLOW_REMOTE_ADMIN is true
+  if (settings.CLAUDE_MEM_REMOTE_MODE === 'true' && settings.CLAUDE_MEM_ALLOW_REMOTE_ADMIN === 'true') {
+    // Optional: Log remote admin access for audit
+    const clientIp = req.ip || req.connection.remoteAddress || '';
+    logger.info('ADMIN', 'Remote admin access', {
+      endpoint: req.path,
+      clientIp,
+      method: req.method
+    });
+    next();
+    return;
+  }
+
+  // Local mode: require localhost only
   const clientIp = req.ip || req.connection.remoteAddress || '';
   const isLocalhost =
     clientIp === '127.0.0.1' ||
@@ -96,7 +136,7 @@ export function requireLocalhost(req: Request, res: Response, next: NextFunction
     });
     res.status(403).json({
       error: 'Forbidden',
-      message: 'Admin endpoints are only accessible from localhost'
+      message: 'Admin endpoints are only accessible from localhost (enable CLAUDE_MEM_ALLOW_REMOTE_ADMIN for remote access)'
     });
     return;
   }

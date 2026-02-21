@@ -36,6 +36,9 @@ export interface SettingsDefaults {
   CLAUDE_MEM_PYTHON_VERSION: string;
   CLAUDE_CODE_PATH: string;
   CLAUDE_MEM_MODE: string;
+  CLAUDE_MEM_REMOTE_MODE: string;
+  CLAUDE_MEM_ALLOWED_ORIGINS: string;
+  CLAUDE_MEM_ALLOW_REMOTE_ADMIN: string;
   // Token Economics
   CLAUDE_MEM_CONTEXT_SHOW_READ_TOKENS: string;
   CLAUDE_MEM_CONTEXT_SHOW_WORK_TOKENS: string;
@@ -96,6 +99,9 @@ export class SettingsDefaultsManager {
     CLAUDE_MEM_PYTHON_VERSION: '3.13',
     CLAUDE_CODE_PATH: '', // Empty means auto-detect via 'which claude'
     CLAUDE_MEM_MODE: 'code', // Default mode profile
+    CLAUDE_MEM_REMOTE_MODE: 'false',
+    CLAUDE_MEM_ALLOWED_ORIGINS: '',
+    CLAUDE_MEM_ALLOW_REMOTE_ADMIN: 'true',
     // Token Economics
     CLAUDE_MEM_CONTEXT_SHOW_READ_TOKENS: 'false',
     CLAUDE_MEM_CONTEXT_SHOW_WORK_TOKENS: 'false',
