@@ -3,6 +3,7 @@ import { Header } from './components/Header';
 import { Feed } from './components/Feed';
 import { ContextSettingsModal } from './components/ContextSettingsModal';
 import { LogsDrawer } from './components/LogsModal';
+import { Sidebar } from './components/Sidebar';
 import { useSSE } from './hooks/useSSE';
 import { useSettings } from './hooks/useSettings';
 import { useStats } from './hooks/useStats';
@@ -151,9 +152,18 @@ export function App() {
       />
 
       {sidebarOpen && (
-        <div>
-          {/* Sidebar component will be added in next task */}
-        </div>
+        <Sidebar
+          isOpen={sidebarOpen}
+          onClose={toggleSidebar}
+          stats={projectStats}
+          isLoading={projectStats.length === 0}
+          error={null}
+          currentFilter={currentFilter}
+          onProjectSelect={(project) => {
+            setCurrentFilter(project);
+            toggleSidebar();
+          }}
+        />
       )}
     </>
   );

@@ -15,7 +15,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onClick }) =>
     <div
       className="project-card"
       style={{
-        animationDelay: `${animationDelay}ms`
+        animationDelay: `${animationDelay}ms`,
+        animationName: 'slideInUp',
+        animationDuration: '0.3s',
+        animationTimingFunction: 'ease-out',
+        animationFillMode: 'forwards'
       }}
       onClick={onClick}
     >
