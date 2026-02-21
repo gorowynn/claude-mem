@@ -281,7 +281,9 @@ export class DataRoutes extends BaseRouteHandler {
         UNION ALL
         SELECT project, created_at_epoch FROM session_summaries
         UNION ALL
-        SELECT project, created_at_epoch FROM user_prompts
+        SELECT s.project, up.created_at_epoch
+        FROM user_prompts up
+        JOIN sdk_sessions s ON up.content_session_id = s.content_session_id
       )
       WHERE project IS NOT NULL
       GROUP BY project
