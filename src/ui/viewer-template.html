@@ -446,18 +446,45 @@
     }
 
     .sidebar-header {
-      padding: 14px 18px;
+      padding: 16px 18px;
       border-bottom: 1px solid var(--color-border-primary);
       display: flex;
       justify-content: space-between;
       align-items: center;
       background: var(--color-bg-header);
+      backdrop-filter: blur(12px);
     }
 
     .sidebar-header h1 {
-      font-size: 16px;
-      font-weight: 500;
-      color: var(--color-text-header);
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      font-family: 'Monaspace Radon', monospace;
+      letter-spacing: -0.02em;
+    }
+
+    .sidebar-close-btn {
+      background: transparent;
+      border: none;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      color: var(--color-text-secondary);
+    }
+
+    .sidebar-close-btn:hover {
+      background: var(--color-bg-card-hover);
+      color: var(--color-text-primary);
+    }
+
+    .sidebar-close-btn svg {
+      width: 18px;
+      height: 18px;
     }
 
     .sidebar-community-btn {
