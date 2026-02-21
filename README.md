@@ -138,6 +138,8 @@ The installer handles dependencies, plugin setup, AI provider configuration, wor
 - 📊 **Progressive Disclosure** - Layered memory retrieval with token cost visibility
 - 🔍 **Skill-Based Search** - Query your project history with mem-search skill
 - 🖥️ **Web Viewer UI** - Real-time memory stream at http://localhost:37777
+  - **Type-Based Visual Distinction:** Observation cards display color-coded badges and left borders based on type (🔴 bugfix, 🟣 feature, 🔄 refactor, ✅ change, 🔵 discovery, ⚖️ decision)
+  - **Enhanced Project Filter:** Improved dropdown with folder icon and wider display for better project navigation
 - 💻 **Claude Desktop Skill** - Search memory from Claude Desktop conversations
 - 🔒 **Privacy Control** - Use `<private>` tags to exclude sensitive content from storage
 - ⚙️ **Context Configuration** - Fine-grained control over what context gets injected
