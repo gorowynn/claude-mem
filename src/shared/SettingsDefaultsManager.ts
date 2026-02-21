@@ -33,6 +33,7 @@ export interface SettingsDefaults {
   CLAUDE_MEM_CUSTOM_SUMMARY_API_URL: string;  // Custom OpenAI-compatible API endpoint
   CLAUDE_MEM_CUSTOM_SUMMARY_API_KEY: string;  // Custom API key
   CLAUDE_MEM_CUSTOM_SUMMARY_MODEL: string;  // Custom API model name
+  CLAUDE_MEM_CUSTOM_SUMMARY_API_FORMAT: string;  // 'auto' | 'openai' | 'anthropic'
   CLAUDE_MEM_CUSTOM_SUMMARY_MAX_CONTEXT_MESSAGES: string;  // Max messages in context window
   CLAUDE_MEM_CUSTOM_SUMMARY_MAX_TOKENS: string;  // Max estimated tokens
   // System Configuration
@@ -101,6 +102,7 @@ export class SettingsDefaultsManager {
     CLAUDE_MEM_CUSTOM_SUMMARY_API_URL: '',  // Empty by default, user must configure
     CLAUDE_MEM_CUSTOM_SUMMARY_API_KEY: '',  // Empty by default, user must configure
     CLAUDE_MEM_CUSTOM_SUMMARY_MODEL: 'gpt-4o-mini',  // Default custom model (common choice)
+    CLAUDE_MEM_CUSTOM_SUMMARY_API_FORMAT: 'auto',  // Auto-detect API format (openai/anthropic)
     CLAUDE_MEM_CUSTOM_SUMMARY_MAX_CONTEXT_MESSAGES: '20',  // Max messages in context window
     CLAUDE_MEM_CUSTOM_SUMMARY_MAX_TOKENS: '100000',  // Max estimated tokens (~100k safety limit)
     // System Configuration

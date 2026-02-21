@@ -39,6 +39,7 @@ interface OpenAIMessage {
   content: string;
 }
 
+// OpenAI-compatible response format
 interface CustomAPIResponse {
   choices?: Array<{
     message?: {
@@ -56,6 +57,26 @@ interface CustomAPIResponse {
     message?: string;
     code?: string;
     type?: string;
+  };
+}
+
+// Anthropic API response format
+interface AnthropicResponse {
+  id?: string;
+  type?: string;
+  role?: string;
+  content?: Array<{
+    type?: string;
+    text?: string;
+  }>;
+  stop_reason?: string;
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+  };
+  error?: {
+    type?: string;
+    message?: string;
   };
 }
 
@@ -277,6 +298,33 @@ export class CustomSummaryAgent {
   }
 
   /**
+   * Detect if the API URL is for Anthropic
+   * Checks for anthropic.com or explicit setting
+   */
+  private isAnthropicAPI(apiUrl: string): boolean {
+    // Check URL for anthropic domain
+    if (apiUrl.includes('anthropic.com')) {
+      return true;
+    }
+
+    // Check settings for explicit API format override
+    const settingsPath = USER_SETTINGS_PATH;
+    const settings = SettingsDefaultsManager.loadFromFile(settingsPath);
+    const apiFormat = settings.CLAUDE_MEM_CUSTOM_SUMMARY_API_FORMAT || 'auto';
+
+    if (apiFormat === 'anthropic') {
+      return true;
+    }
+
+    if (apiFormat === 'openai') {
+      return false;
+    }
+
+    // Auto-detect: check for Anthropic-specific URL patterns
+    return apiUrl.includes('/v1/messages') || apiUrl.includes('/messages');
+  }
+
+  /**
    * Estimate token count from text (conservative estimate)
    */
   private estimateTokens(text: string): number {
@@ -339,8 +387,9 @@ export class CustomSummaryAgent {
   }
 
   /**
-   * Query custom OpenAI-compatible API with full conversation history (multi-turn)
+   * Query custom API with full conversation history (multi-turn)
    * Sends the entire conversation context for coherent responses
+   * Supports both OpenAI-compatible and Anthropic API formats
    */
   private async queryCustomAPIMultiTurn(
     history: ConversationMessage[],
@@ -350,73 +399,188 @@ export class CustomSummaryAgent {
   ): Promise<{ content: string; tokensUsed?: number }> {
     // Truncate history to prevent runaway costs
     const truncatedHistory = this.truncateHistory(history);
-    const messages = this.conversationToOpenAIMessages(truncatedHistory);
     const totalChars = truncatedHistory.reduce((sum, m) => sum + m.content.length, 0);
     const estimatedTokens = this.estimateTokens(truncatedHistory.map(m => m.content).join(''));
+
+    // Detect API format
+    const isAnthropic = this.isAnthropicAPI(apiUrl);
 
     logger.debug('SDK', `Querying custom API multi-turn (${model})`, {
       turns: truncatedHistory.length,
       totalChars,
       estimatedTokens,
-      apiUrl: apiUrl.replace(/\/\/[^@]+@/, '//***@')  // Hide credentials in logs
+      apiUrl: apiUrl.replace(/\/\/[^@]+@/, '//***@'),  // Hide credentials in logs
+      apiUrlRaw: apiUrl,  // For debugging - will show full URL including any embedded credentials
+      apiFormat: isAnthropic ? 'anthropic' : 'openai'
     });
 
-    const response = await fetch(apiUrl, {
+    logger.debug('SDK', `Fetching from custom API`, {
+      url: apiUrl,
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature: 0.3,  // Lower temperature for structured extraction
-        max_tokens: 4096,
-      }),
+      model,
+      apiFormat: isAnthropic ? 'anthropic' : 'openai'
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Custom API error: ${response.status} - ${errorText}`);
-    }
+    let response: Response;
+    let tokensUsed = 0;
+    let content = '';
 
-    const data = await response.json() as CustomAPIResponse;
+    if (isAnthropic) {
+      // Anthropic Messages API format
+      const systemMessage = this.extractSystemMessage(truncatedHistory);
+      const userMessages = this.extractUserMessages(truncatedHistory);
 
-    // Check for API error in response body
-    if (data.error) {
-      throw new Error(`Custom API error: ${data.error.type || data.error.code} - ${data.error.message}`);
-    }
-
-    if (!data.choices?.[0]?.message?.content) {
-      logger.error('SDK', 'Empty response from custom API');
-      return { content: '' };
-    }
-
-    const content = data.choices[0].message.content;
-    const tokensUsed = data.usage?.total_tokens;
-
-    // Log actual token usage for cost tracking
-    if (tokensUsed) {
-      const inputTokens = data.usage?.prompt_tokens || 0;
-      const outputTokens = data.usage?.completion_tokens || 0;
-
-      logger.info('SDK', 'Custom API usage', {
-        model,
-        inputTokens,
-        outputTokens,
-        totalTokens: tokensUsed,
-        messagesInContext: truncatedHistory.length
+      response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages: userMessages,
+          system: systemMessage,
+          temperature: 0.3,
+          max_tokens: 4096,
+        }),
       });
 
-      // Warn if costs are getting high
-      if (tokensUsed > 50000) {
-        logger.warn('SDK', 'High token usage detected - consider reducing context', {
-          totalTokens: tokensUsed
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Anthropic API error: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json() as AnthropicResponse;
+
+      // Check for API error in response body
+      if (data.error) {
+        throw new Error(`Anthropic API error: ${data.error.type} - ${data.error.message}`);
+      }
+
+      // Extract text content from Anthropic response
+      if (data.content && data.content.length > 0) {
+        const textBlock = data.content.find(block => block.type === 'text');
+        content = textBlock?.text || '';
+      }
+
+      tokensUsed = (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0);
+
+      // Log actual token usage
+      if (data.usage) {
+        logger.info('SDK', 'Anthropic API usage', {
+          model,
+          inputTokens: data.usage.input_tokens,
+          outputTokens: data.usage.output_tokens,
+          totalTokens: tokensUsed,
+          messagesInContext: truncatedHistory.length
         });
+
+        // Warn if costs are getting high
+        if (tokensUsed > 50000) {
+          logger.warn('SDK', 'High token usage detected - consider reducing context', {
+            totalTokens: tokensUsed
+          });
+        }
+      }
+
+    } else {
+      // OpenAI-compatible API format
+      const messages = this.conversationToOpenAIMessages(truncatedHistory);
+
+      response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature: 0.3,
+          max_tokens: 4096,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Custom API error: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json() as CustomAPIResponse;
+
+      // Check for API error in response body
+      if (data.error) {
+        throw new Error(`Custom API error: ${data.error.type || data.error.code} - ${data.error.message}`);
+      }
+
+      if (!data.choices?.[0]?.message?.content) {
+        logger.error('SDK', 'Empty response from custom API');
+        return { content: '' };
+      }
+
+      content = data.choices[0].message.content;
+      tokensUsed = data.usage?.total_tokens || 0;
+
+      // Log actual token usage for cost tracking
+      if (data.usage) {
+        const inputTokens = data.usage?.prompt_tokens || 0;
+        const outputTokens = data.usage?.completion_tokens || 0;
+
+        logger.info('SDK', 'Custom API usage', {
+          model,
+          inputTokens,
+          outputTokens,
+          totalTokens: tokensUsed,
+          messagesInContext: truncatedHistory.length
+        });
+
+        // Warn if costs are getting high
+        if (tokensUsed > 50000) {
+          logger.warn('SDK', 'High token usage detected - consider reducing context', {
+            totalTokens: tokensUsed
+          });
+        }
       }
     }
 
     return { content, tokensUsed };
+  }
+
+  /**
+   * Extract system message from conversation history (for Anthropic API)
+   * Returns the first user message as system context, or empty string
+   */
+  private extractSystemMessage(history: ConversationMessage[]): string {
+    if (history.length === 0) return '';
+    // First user message typically contains system instructions
+    const firstUserMsg = history.find(m => m.role === 'user');
+    return firstUserMsg?.content || '';
+  }
+
+  /**
+   * Extract user messages for Anthropic API format
+   * Anthropic expects alternating user/assistant messages
+   */
+  private extractUserMessages(history: ConversationMessage[]): Array<{ role: string; content: string }> {
+    const result: Array<{ role: string; content: string }> = [];
+
+    for (const msg of history) {
+      if (msg.role === 'user') {
+        result.push({
+          role: 'user',
+          content: msg.content
+        });
+      } else if (msg.role === 'assistant' && result.length > 0) {
+        // Only add assistant messages if there's already a user message
+        result.push({
+          role: 'assistant',
+          content: msg.content
+        });
+      }
+    }
+
+    return result;
   }
 
   /**
@@ -429,7 +593,38 @@ export class CustomSummaryAgent {
 
     // API URL: check settings first, then centralized claude-mem .env (NOT process.env)
     // This prevents Issue #733 where random project .env files could interfere
-    const apiUrl = settings.CLAUDE_MEM_CUSTOM_SUMMARY_API_URL || getCredential('CUSTOM_SUMMARY_API_URL') || '';
+    let apiUrl = settings.CLAUDE_MEM_CUSTOM_SUMMARY_API_URL || getCredential('CUSTOM_SUMMARY_API_URL') || '';
+
+    const apiFormat = settings.CLAUDE_MEM_CUSTOM_SUMMARY_API_FORMAT || 'auto';
+    const isAnthropic = apiFormat === 'anthropic' || apiUrl.includes('anthropic.com');
+
+    // Auto-detect and append appropriate endpoint path
+    if (apiUrl) {
+      const hasEndpoint = apiUrl.endsWith('/chat/completions') ||
+                         apiUrl.endsWith('/completions') ||
+                         apiUrl.endsWith('/v1/messages') ||
+                         apiUrl.endsWith('/messages');
+
+      if (!hasEndpoint) {
+        // Remove trailing slash if present
+        apiUrl = apiUrl.replace(/\/$/, '');
+
+        // Append appropriate endpoint based on API format
+        if (isAnthropic) {
+          apiUrl += '/v1/messages';
+          logger.debug('SDK', 'Auto-appended /v1/messages to Anthropic API URL', {
+            originalUrl: settings.CLAUDE_MEM_CUSTOM_SUMMARY_API_URL || getCredential('CUSTOM_SUMMARY_API_URL') || '',
+            finalUrl: apiUrl
+          });
+        } else {
+          apiUrl += '/chat/completions';
+          logger.debug('SDK', 'Auto-appended /chat/completions to custom API URL', {
+            originalUrl: settings.CLAUDE_MEM_CUSTOM_SUMMARY_API_URL || getCredential('CUSTOM_SUMMARY_API_URL') || '',
+            finalUrl: apiUrl
+          });
+        }
+      }
+    }
 
     // API key: check settings first, then centralized claude-mem .env
     const apiKey = settings.CLAUDE_MEM_CUSTOM_SUMMARY_API_KEY || getCredential('CUSTOM_SUMMARY_API_KEY') || '';
