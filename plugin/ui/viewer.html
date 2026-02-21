@@ -18,10 +18,10 @@
     /* Theme Variables - Light Mode */
     :root,
     [data-theme="light"] {
-      --color-bg-primary: #faf8f5;
-      --color-bg-secondary: #f5f2ed;
+      --color-bg-primary: #ffffff;
+      --color-bg-secondary: #f6f8fa;
       --color-bg-tertiary: #f0f0f0;
-      --color-bg-header: rgba(250, 248, 245, 0.85);
+      --color-bg-header: rgba(255, 255, 255, 0.85);
       --color-bg-card: #ffffff;
       --color-bg-card-hover: #f6f8fa;
       --color-bg-input: #ffffff;
@@ -32,7 +32,7 @@
       --color-bg-prompt: #f6f3fb;
       --color-bg-observation: #f0f6fb;
       --color-bg-stat: #f6f8fa;
-      --color-bg-scrollbar-track: #faf8f5;
+      --color-bg-scrollbar-track: #ffffff;
       --color-bg-scrollbar-thumb: #d1d5da;
       --color-bg-scrollbar-thumb-hover: #b1b5ba;
 
@@ -116,21 +116,21 @@
 
     /* Theme Variables - Dark Mode */
     [data-theme="dark"] {
-      --color-bg-primary: #141411;
-      --color-bg-secondary: #1e1e1b;
-      --color-bg-tertiary: #1a1916;
-      --color-bg-header: rgba(20, 20, 17, 0.85);
-      --color-bg-card: #1e1e1b;
-      --color-bg-card-hover: #262420;
-      --color-bg-input: #1e1e1b;
+      --color-bg-primary: #0d1117;
+      --color-bg-secondary: #161b22;
+      --color-bg-tertiary: #21262d;
+      --color-bg-header: rgba(13, 17, 23, 0.85);
+      --color-bg-card: #161b22;
+      --color-bg-card-hover: #1c2128;
+      --color-bg-input: #161b22;
       --color-bg-button: #0969da;
       --color-bg-button-hover: #1177e6;
       --color-bg-button-active: #0860ca;
       --color-bg-summary: #2a2724;
       --color-bg-prompt: #262033;
       --color-bg-observation: #1a2332;
-      --color-bg-stat: #1e1e1b;
-      --color-bg-scrollbar-track: #141411;
+      --color-bg-stat: #161b22;
+      --color-bg-scrollbar-track: #0d1117;
       --color-bg-scrollbar-thumb: #3a3834;
       --color-bg-scrollbar-thumb-hover: #4a4540;
 
@@ -364,44 +364,6 @@
       color: var(--color-text-primary);
       font-size: 14px;
       overflow: hidden;
-      position: relative;
-    }
-
-    /* Premium background with subtle gradient wash */
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background:
-        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(154, 103, 0, 0.04) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 40% at 100% 0%, rgba(9, 105, 218, 0.03) 0%, transparent 50%),
-        radial-gradient(ellipse 50% 30% at 0% 100%, rgba(130, 80, 223, 0.02) 0%, transparent 50%);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    /* Subtle noise texture overlay */
-    body::after {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      opacity: 0.4;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    [data-theme="dark"] body::before {
-      background:
-        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(212, 184, 136, 0.06) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 40% at 100% 0%, rgba(88, 166, 255, 0.04) 0%, transparent 50%),
-        radial-gradient(ellipse 50% 30% at 0% 100%, rgba(142, 124, 188, 0.03) 0%, transparent 50%);
     }
 
     .full-height-flex-layout {
