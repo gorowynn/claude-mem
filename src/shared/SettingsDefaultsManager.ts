@@ -19,7 +19,7 @@ export interface SettingsDefaults {
   CLAUDE_MEM_WORKER_HOST: string;
   CLAUDE_MEM_SKIP_TOOLS: string;
   // AI Provider Configuration
-  CLAUDE_MEM_PROVIDER: string;  // 'claude' | 'gemini' | 'openrouter'
+  CLAUDE_MEM_PROVIDER: string;  // 'claude' | 'gemini' | 'openrouter' | 'custom'
   CLAUDE_MEM_CLAUDE_AUTH_METHOD: string;  // 'cli' | 'api' - how Claude provider authenticates
   CLAUDE_MEM_GEMINI_API_KEY: string;
   CLAUDE_MEM_GEMINI_MODEL: string;  // 'gemini-2.5-flash-lite' | 'gemini-2.5-flash' | 'gemini-3-flash-preview'
@@ -30,6 +30,11 @@ export interface SettingsDefaults {
   CLAUDE_MEM_OPENROUTER_APP_NAME: string;
   CLAUDE_MEM_OPENROUTER_MAX_CONTEXT_MESSAGES: string;
   CLAUDE_MEM_OPENROUTER_MAX_TOKENS: string;
+  CLAUDE_MEM_CUSTOM_SUMMARY_API_URL: string;  // Custom OpenAI-compatible API endpoint
+  CLAUDE_MEM_CUSTOM_SUMMARY_API_KEY: string;  // Custom API key
+  CLAUDE_MEM_CUSTOM_SUMMARY_MODEL: string;  // Custom API model name
+  CLAUDE_MEM_CUSTOM_SUMMARY_MAX_CONTEXT_MESSAGES: string;  // Max messages in context window
+  CLAUDE_MEM_CUSTOM_SUMMARY_MAX_TOKENS: string;  // Max estimated tokens
   // System Configuration
   CLAUDE_MEM_DATA_DIR: string;
   CLAUDE_MEM_LOG_LEVEL: string;
@@ -93,6 +98,11 @@ export class SettingsDefaultsManager {
     CLAUDE_MEM_OPENROUTER_APP_NAME: 'claude-mem',  // App name for OpenRouter analytics
     CLAUDE_MEM_OPENROUTER_MAX_CONTEXT_MESSAGES: '20',  // Max messages in context window
     CLAUDE_MEM_OPENROUTER_MAX_TOKENS: '100000',  // Max estimated tokens (~100k safety limit)
+    CLAUDE_MEM_CUSTOM_SUMMARY_API_URL: '',  // Empty by default, user must configure
+    CLAUDE_MEM_CUSTOM_SUMMARY_API_KEY: '',  // Empty by default, user must configure
+    CLAUDE_MEM_CUSTOM_SUMMARY_MODEL: 'gpt-4o-mini',  // Default custom model (common choice)
+    CLAUDE_MEM_CUSTOM_SUMMARY_MAX_CONTEXT_MESSAGES: '20',  // Max messages in context window
+    CLAUDE_MEM_CUSTOM_SUMMARY_MAX_TOKENS: '100000',  // Max estimated tokens (~100k safety limit)
     // System Configuration
     CLAUDE_MEM_DATA_DIR: join(homedir(), '.claude-mem'),
     CLAUDE_MEM_LOG_LEVEL: 'INFO',

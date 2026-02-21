@@ -35,6 +35,8 @@ export const MANAGED_CREDENTIAL_KEYS = [
   'ANTHROPIC_API_KEY',
   'GEMINI_API_KEY',
   'OPENROUTER_API_KEY',
+  'CUSTOM_SUMMARY_API_URL',
+  'CUSTOM_SUMMARY_API_KEY',
 ];
 
 export interface ClaudeMemEnv {
@@ -42,6 +44,8 @@ export interface ClaudeMemEnv {
   ANTHROPIC_API_KEY?: string;
   GEMINI_API_KEY?: string;
   OPENROUTER_API_KEY?: string;
+  CUSTOM_SUMMARY_API_URL?: string;
+  CUSTOM_SUMMARY_API_KEY?: string;
 }
 
 /**
@@ -117,6 +121,8 @@ export function loadClaudeMemEnv(): ClaudeMemEnv {
     if (parsed.ANTHROPIC_API_KEY) result.ANTHROPIC_API_KEY = parsed.ANTHROPIC_API_KEY;
     if (parsed.GEMINI_API_KEY) result.GEMINI_API_KEY = parsed.GEMINI_API_KEY;
     if (parsed.OPENROUTER_API_KEY) result.OPENROUTER_API_KEY = parsed.OPENROUTER_API_KEY;
+    if (parsed.CUSTOM_SUMMARY_API_URL) result.CUSTOM_SUMMARY_API_URL = parsed.CUSTOM_SUMMARY_API_URL;
+    if (parsed.CUSTOM_SUMMARY_API_KEY) result.CUSTOM_SUMMARY_API_KEY = parsed.CUSTOM_SUMMARY_API_KEY;
 
     return result;
   } catch (error) {
@@ -163,6 +169,20 @@ export function saveClaudeMemEnv(env: ClaudeMemEnv): void {
         updated.OPENROUTER_API_KEY = env.OPENROUTER_API_KEY;
       } else {
         delete updated.OPENROUTER_API_KEY;
+      }
+    }
+    if (env.CUSTOM_SUMMARY_API_URL !== undefined) {
+      if (env.CUSTOM_SUMMARY_API_URL) {
+        updated.CUSTOM_SUMMARY_API_URL = env.CUSTOM_SUMMARY_API_URL;
+      } else {
+        delete updated.CUSTOM_SUMMARY_API_URL;
+      }
+    }
+    if (env.CUSTOM_SUMMARY_API_KEY !== undefined) {
+      if (env.CUSTOM_SUMMARY_API_KEY) {
+        updated.CUSTOM_SUMMARY_API_KEY = env.CUSTOM_SUMMARY_API_KEY;
+      } else {
+        delete updated.CUSTOM_SUMMARY_API_KEY;
       }
     }
 
