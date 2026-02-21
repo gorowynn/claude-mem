@@ -87,7 +87,7 @@ export function Sidebar({
   return (
     <>
       <div
-        className={`sidebar-backdrop ${isOpen ? 'visible' : ''}`}
+        className={`sidebar-backdrop ${isOpen ? 'active' : ''}`}
         onClick={handleBackdropClick}
         aria-hidden="true"
       />
