@@ -108,3 +108,14 @@ export interface Stats {
   worker?: WorkerStats;
   database?: DatabaseStats;
 }
+
+export interface ProjectStats {
+  project: string;
+  totalCount: number;
+  lastActivityEpoch: number;
+}
+
+export interface ProjectStatsResponse {
+  projects: ProjectStats[];
+  totalProjects: number;
+}
