@@ -513,16 +513,29 @@ export class WorkerService {
   /**
    * Get the appropriate agent based on provider settings.
    * Same logic as SessionRoutes.getActiveAgent() for consistency.
+   *
+   * IMPORTANT: Throws error if selected provider is not configured to prevent
+   * silent fallback to wrong provider (especially important for remote servers
+   * where Claude SDK may not be available).
    */
   private getActiveAgent(): SDKAgent | GeminiAgent | OpenRouterAgent | CustomSummaryAgent {
-    if (isCustomSummarySelected() && isCustomSummaryAvailable()) {
-      return this.customSummaryAgent;
+    if (isCustomSummarySelected()) {
+      if (isCustomSummaryAvailable()) {
+        return this.customSummaryAgent;
+      }
+      throw new Error('Custom Summary provider selected but not configured. Set CLAUDE_MEM_CUSTOM_SUMMARY_API_URL and CLAUDE_MEM_CUSTOM_SUMMARY_API_KEY in settings.');
     }
-    if (isOpenRouterSelected() && isOpenRouterAvailable()) {
-      return this.openRouterAgent;
+    if (isOpenRouterSelected()) {
+      if (isOpenRouterAvailable()) {
+        return this.openRouterAgent;
+      }
+      throw new Error('OpenRouter provider selected but no API key configured. Set CLAUDE_MEM_OPENROUTER_API_KEY in settings or OPENROUTER_API_KEY environment variable.');
     }
-    if (isGeminiSelected() && isGeminiAvailable()) {
-      return this.geminiAgent;
+    if (isGeminiSelected()) {
+      if (isGeminiAvailable()) {
+        return this.geminiAgent;
+      }
+      throw new Error('Gemini provider selected but no API key configured. Set CLAUDE_MEM_GEMINI_API_KEY in settings or GEMINI_API_KEY environment variable.');
     }
     return this.sdkAgent;
   }
