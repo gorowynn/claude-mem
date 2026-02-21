@@ -4,12 +4,12 @@
 
 /**
  * Format epoch timestamp as relative time (e.g., "2h ago", "3d ago")
- * @param epoch - Unix timestamp in seconds
+ * @param epoch - Unix timestamp in milliseconds
  * @returns Formatted relative time string
  */
 export function formatRelativeTime(epoch: number): string {
   const now = Date.now();
-  const seconds = Math.floor((now - epoch * 1000) / 1000);
+  const seconds = Math.floor((now - epoch) / 1000);
 
   if (seconds < 60) {
     return `${seconds}s ago`;

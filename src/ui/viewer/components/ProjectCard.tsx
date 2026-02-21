@@ -39,7 +39,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onClick }) =>
         <span className="project-card-count">{project.totalCount}</span>
       </div>
       <div className="project-card-footer">
-        <span className="project-card-time">
+        <span className="project-card-time" title={`Last activity: ${new Date(project.lastActivityEpoch).toLocaleString()}`}>
           {formatRelativeTime(project.lastActivityEpoch)}
         </span>
       </div>
