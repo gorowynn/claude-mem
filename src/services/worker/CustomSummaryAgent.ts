@@ -280,7 +280,13 @@ export class CustomSummaryAgent {
       }
 
       // Check if we should fall back to Claude
-      if (shouldFallbackToClaude(error) && this.fallbackAgent) {
+      // IMPORTANT: In remote mode, Claude SDK is not available, so don't fall back
+      const { SettingsDefaultsManager } = await import('../../shared/SettingsDefaultsManager.js');
+      const { USER_SETTINGS_PATH } = await import('../../shared/paths.js');
+      const settings = SettingsDefaultsManager.loadFromFile(USER_SETTINGS_PATH);
+      const isRemoteMode = settings.CLAUDE_MEM_REMOTE_MODE === 'true';
+
+      if (shouldFallbackToClaude(error) && this.fallbackAgent && !isRemoteMode) {
         logger.warn('SDK', 'Custom API failed, falling back to Claude SDK', {
           sessionDbId: session.sessionDbId,
           error: error instanceof Error ? error.message : String(error),
@@ -290,6 +296,14 @@ export class CustomSummaryAgent {
         // Fall back to Claude - it will use the same session with shared conversationHistory
         // Note: With claim-and-delete queue pattern, messages are already deleted on claim
         return this.fallbackAgent.startSession(session, worker);
+      }
+
+      // In remote mode or if no fallback available, fail with clear error
+      if (isRemoteMode) {
+        logger.error('SDK', 'Custom API failed in remote mode - no fallback available (Claude SDK not accessible)', {
+          sessionDbId: session.sessionDbId,
+          error: error instanceof Error ? error.message : String(error)
+        });
       }
 
       logger.failure('SDK', 'Custom Summary agent error', { sessionDbId: session.sessionDbId }, error as Error);
