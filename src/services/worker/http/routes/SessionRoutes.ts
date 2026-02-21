@@ -140,7 +140,7 @@ export class SessionRoutes extends BaseRouteHandler {
    */
   private startGeneratorWithProvider(
     session: ReturnType<typeof this.sessionManager.getSession>,
-    provider: 'claude' | 'gemini' | 'openrouter',
+    provider: 'claude' | 'gemini' | 'openrouter' | 'custom',
     source: string
   ): void {
     if (!session) return;
@@ -155,8 +155,12 @@ export class SessionRoutes extends BaseRouteHandler {
       session.abortController = new AbortController();
     }
 
-    const agent = provider === 'openrouter' ? this.openRouterAgent : (provider === 'gemini' ? this.geminiAgent : this.sdkAgent);
-    const agentName = provider === 'openrouter' ? 'OpenRouter' : (provider === 'gemini' ? 'Gemini' : 'Claude SDK');
+    const agent = provider === 'custom' ? this.customSummaryAgent :
+                  (provider === 'openrouter' ? this.openRouterAgent :
+                  (provider === 'gemini' ? this.geminiAgent : this.sdkAgent));
+    const agentName = provider === 'custom' ? 'CustomSummary' :
+                      (provider === 'openrouter' ? 'OpenRouter' :
+                      (provider === 'gemini' ? 'Gemini' : 'Claude SDK'));
 
     // Use database count for accurate telemetry (in-memory array is always empty due to FK constraint fix)
     const pendingStore = this.sessionManager.getPendingMessageStore();
