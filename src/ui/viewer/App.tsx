@@ -109,9 +109,6 @@ export function App() {
     <>
       <Header
         isConnected={isConnected}
-        projects={projects}
-        currentFilter={currentFilter}
-        onFilterChange={setCurrentFilter}
         isProcessing={isProcessing}
         queueDepth={queueDepth}
         themePreference={preference}
