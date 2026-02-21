@@ -397,8 +397,9 @@
       flex-direction: column;
       transform: translate3d(100%, 0, 0);
       transition: transform 0.3s ease;
-      z-index: 100;
+      z-index: 1001;
       will-change: transform;
+      pointer-events: auto;
     }
 
     .sidebar.open {
@@ -477,6 +478,8 @@
       border-radius: 6px;
       transition: all 0.2s ease;
       color: var(--color-text-secondary);
+      position: relative;
+      z-index: 1002;
     }
 
     .sidebar-close-btn:hover {
@@ -3728,6 +3731,7 @@
       visibility: hidden;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       z-index: 999;
+      pointer-events: auto;
     }
 
     .sidebar-backdrop.active {
