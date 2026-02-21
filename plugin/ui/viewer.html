@@ -995,6 +995,7 @@
     .card.type-bugfix {
       background: linear-gradient(135deg, var(--color-type-bugfix-bg) 0%, var(--color-bg-card) 100%);
       border-color: var(--color-type-bugfix-border);
+      border-width: 2px;
     }
     .card.type-bugfix::before {
       content: '';
@@ -1020,6 +1021,7 @@
     .card.type-feature {
       background: linear-gradient(135deg, var(--color-type-feature-bg) 0%, var(--color-bg-card) 100%);
       border-color: var(--color-type-feature-border);
+      border-width: 2px;
     }
     .card.type-feature::before {
       content: '';
@@ -1045,6 +1047,7 @@
     .card.type-refactor {
       background: linear-gradient(135deg, var(--color-type-refactor-bg) 0%, var(--color-bg-card) 100%);
       border-color: var(--color-type-refactor-border);
+      border-width: 2px;
     }
     .card.type-refactor::before {
       content: '';
@@ -1070,6 +1073,7 @@
     .card.type-change {
       background: linear-gradient(135deg, var(--color-type-change-bg) 0%, var(--color-bg-card) 100%);
       border-color: var(--color-type-change-border);
+      border-width: 2px;
     }
     .card.type-change::before {
       content: '';
@@ -1095,6 +1099,7 @@
     .card.type-discovery {
       background: linear-gradient(135deg, var(--color-type-discovery-bg) 0%, var(--color-bg-card) 100%);
       border-color: var(--color-type-discovery-border);
+      border-width: 2px;
     }
     .card.type-discovery::before {
       content: '';
@@ -1120,6 +1125,7 @@
     .card.type-decision {
       background: linear-gradient(135deg, var(--color-type-decision-bg) 0%, var(--color-bg-card) 100%);
       border-color: var(--color-type-decision-border);
+      border-width: 2px;
     }
     .card.type-decision::before {
       content: '';
@@ -1689,17 +1695,53 @@
     }
 
     .prompt-card {
+      position: relative;
+      background: linear-gradient(135deg, var(--color-bg-prompt) 0%, var(--color-bg-card) 100%);
       border-color: var(--color-border-prompt);
-      background: var(--color-bg-prompt);
+      border-width: 2px;
+      overflow: hidden;
+    }
+
+    .prompt-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--color-accent-prompt), transparent);
+      opacity: 0.8;
+    }
+
+    .prompt-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 50px;
+      height: 50px;
+      background: radial-gradient(circle at top right, var(--color-accent-prompt), transparent 70%);
+      opacity: 0.06;
+      pointer-events: none;
     }
 
     .prompt-card:hover {
       border-color: var(--color-border-prompt-hover);
+      box-shadow: 0 8px 24px rgba(130, 80, 223, 0.15), 0 2px 6px rgba(130, 80, 223, 0.1);
+    }
+
+    .prompt-card:hover::before {
+      opacity: 1;
+    }
+
+    .prompt-card:hover::after {
+      opacity: 0.12;
     }
 
     .prompt-card .card-type {
-      background: var(--color-prompt-badge-bg);
-      color: var(--color-prompt-badge-text);
+      background: var(--color-accent-prompt);
+      color: white;
+      font-weight: 600;
     }
 
     .observation-card {
