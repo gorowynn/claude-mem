@@ -59,6 +59,10 @@ function clearWorkerSpawnAttempted(): void {
   }
 }
 
+// Re-export for backward compatibility — canonical implementation in shared/plugin-state.ts
+export { isPluginDisabledInClaudeSettings } from '../shared/plugin-state.js';
+import { isPluginDisabledInClaudeSettings } from '../shared/plugin-state.js';
+
 // Version injected at build time by esbuild define
 declare const __DEFAULT_PACKAGE_VERSION__: string;
 const packageVersion = typeof __DEFAULT_PACKAGE_VERSION__ !== 'undefined' ? __DEFAULT_PACKAGE_VERSION__ : '0.0.0-dev';
@@ -74,11 +78,14 @@ import {
   cleanStalePidFile,
   isProcessAlive,
   spawnDaemon,
-  createSignalHandler
+  createSignalHandler,
+  isPidFileRecent,
+  touchPidFile
 } from './infrastructure/ProcessManager.js';
 import {
   isPortInUse,
   waitForHealth,
+  waitForReadiness,
   waitForPortFree,
   httpShutdown,
   checkVersionMatch
@@ -407,9 +414,14 @@ export class WorkerService {
         runOneTimeChromaMigration();
       }
 
-      // Initialize ChromaMcpManager (lazy - connects on first use via ChromaSync)
-      this.chromaMcpManager = ChromaMcpManager.getInstance();
-      logger.info('SYSTEM', 'ChromaMcpManager initialized (lazy - connects on first use)');
+      // Initialize ChromaMcpManager only if Chroma is enabled
+      const chromaEnabled = settings.CLAUDE_MEM_CHROMA_ENABLED !== 'false';
+      if (chromaEnabled) {
+        this.chromaMcpManager = ChromaMcpManager.getInstance();
+        logger.info('SYSTEM', 'ChromaMcpManager initialized (lazy - connects on first use)');
+      } else {
+        logger.info('SYSTEM', 'Chroma disabled via CLAUDE_MEM_CHROMA_ENABLED=false, skipping ChromaMcpManager');
+      }
 
       const modeId = settings.CLAUDE_MEM_MODE;
       ModeManager.getInstance().loadMode(modeId);
@@ -439,6 +451,13 @@ export class WorkerService {
       this.server.registerRoutes(this.searchRoutes);
       logger.info('WORKER', 'SearchManager initialized and search routes registered');
 
+      // DB and search are ready — mark initialization complete so hooks can proceed.
+      // MCP connection is tracked separately via mcpReady and is NOT required for
+      // the worker to serve context/search requests.
+      this.initializationCompleteFlag = true;
+      this.resolveInitialization();
+      logger.info('SYSTEM', 'Core initialization complete (DB + search ready)');
+
       // Auto-backfill Chroma for all projects if out of sync with SQLite (fire-and-forget)
       if (this.chromaMcpManager) {
         ChromaSync.backfillAllProjects().then(() => {
@@ -464,11 +483,7 @@ export class WorkerService {
 
       await Promise.race([mcpConnectionPromise, timeoutPromise]);
       this.mcpReady = true;
-      logger.success('WORKER', 'Connected to MCP server');
-
-      this.initializationCompleteFlag = true;
-      this.resolveInitialization();
-      logger.info('SYSTEM', 'Background initialization complete');
+      logger.success('WORKER', 'MCP server connected');
 
       // Start orphan reaper to clean up zombie processes (Issue #737)
       this.stopOrphanReaper = startOrphanReaper(() => {
@@ -569,6 +584,9 @@ export class WorkerService {
     let sessionFailed = false;
 
     logger.info('SYSTEM', `Starting generator (${source}) using ${providerName}`, { sessionId: sid });
+
+    // Track generator activity for stale detection (Issue #1099)
+    session.lastGeneratorActivity = Date.now();
 
     session.generatorPromise = agent.startSession(session, this)
       .catch(async (error: unknown) => {
@@ -928,6 +946,23 @@ async function ensureWorkerStarted(port: number): Promise<boolean> {
   if (await waitForHealth(port, 1000)) {
     const versionCheck = await checkVersionMatch(port);
     if (!versionCheck.matches) {
+      // Guard: If PID file was written recently, another session is likely already
+      // restarting the worker. Poll health instead of starting a concurrent restart.
+      // This prevents the "100 sessions all restart simultaneously" storm (#1145).
+      const RESTART_COORDINATION_THRESHOLD_MS = 15000;
+      if (isPidFileRecent(RESTART_COORDINATION_THRESHOLD_MS)) {
+        logger.info('SYSTEM', 'Version mismatch detected but PID file is recent — another restart likely in progress, polling health', {
+          pluginVersion: versionCheck.pluginVersion,
+          workerVersion: versionCheck.workerVersion
+        });
+        const healthy = await waitForHealth(port, RESTART_COORDINATION_THRESHOLD_MS);
+        if (healthy) {
+          logger.info('SYSTEM', 'Worker became healthy after waiting for concurrent restart');
+          return true;
+        }
+        logger.warn('SYSTEM', 'Worker did not become healthy after waiting — proceeding with own restart');
+      }
+
       logger.info('SYSTEM', 'Worker version mismatch detected - auto-restarting', {
         pluginVersion: versionCheck.pluginVersion,
         workerVersion: versionCheck.workerVersion
@@ -984,7 +1019,17 @@ async function ensureWorkerStarted(port: number): Promise<boolean> {
     return false;
   }
 
+  // Health passed (HTTP listening). Now wait for DB + search initialization
+  // so hooks that run immediately after can actually use the worker.
+  const ready = await waitForReadiness(port, getPlatformTimeout(HOOK_TIMEOUTS.READINESS_WAIT));
+  if (!ready) {
+    logger.warn('SYSTEM', 'Worker is alive but readiness timed out — proceeding anyway');
+  }
+
   clearWorkerSpawnAttempted();
+  // Touch PID file to signal other sessions that a restart just completed.
+  // Other sessions checking isPidFileRecent() will see this and skip their own restart.
+  touchPidFile();
   logger.info('SYSTEM', 'Worker started successfully');
   return true;
 }
@@ -995,6 +1040,14 @@ async function ensureWorkerStarted(port: number): Promise<boolean> {
 
 async function main() {
   const command = process.argv[2];
+
+  // Early exit if plugin is disabled in Claude Code settings (#781).
+  // Only gate hook-initiated commands; CLI management (stop/status) still works.
+  const hookInitiatedCommands = ['start', 'hook', 'restart', '--daemon'];
+  if ((hookInitiatedCommands.includes(command) || command === undefined) && isPluginDisabledInClaudeSettings()) {
+    process.exit(0);
+  }
+
   const port = getWorkerPort();
 
   // Helper for JSON status output in 'start' command
@@ -1013,6 +1066,7 @@ async function main() {
       } else {
         exitWithStatus('error', 'Failed to start worker');
       }
+      break;
     }
 
     case 'stop': {
@@ -1024,6 +1078,7 @@ async function main() {
       removePidFile();
       logger.info('SYSTEM', 'Worker stopped successfully');
       process.exit(0);
+      break;
     }
 
     case 'restart': {
@@ -1060,6 +1115,7 @@ async function main() {
 
       logger.info('SYSTEM', 'Worker restarted successfully');
       process.exit(0);
+      break;
     }
 
     case 'status': {
@@ -1074,12 +1130,14 @@ async function main() {
         console.log('Worker is not running');
       }
       process.exit(0);
+      break;
     }
 
     case 'cursor': {
       const subcommand = process.argv[3];
       const cursorResult = await handleCursorCommand(subcommand, process.argv.slice(4));
       process.exit(cursorResult);
+      break;
     }
 
     case 'hook': {
@@ -1133,6 +1191,7 @@ async function main() {
       const { generateClaudeMd } = await import('../cli/claude-md-commands.js');
       const result = await generateClaudeMd(dryRun);
       process.exit(result);
+      break;
     }
 
     case 'clean': {
@@ -1140,6 +1199,7 @@ async function main() {
       const { cleanClaudeMd } = await import('../cli/claude-md-commands.js');
       const result = await cleanClaudeMd(dryRun);
       process.exit(result);
+      break;
     }
 
     case '--daemon':
@@ -1196,5 +1256,8 @@ const isMainModule = typeof require !== 'undefined' && typeof module !== 'undefi
   : import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('worker-service');
 
 if (isMainModule) {
-  main();
+  main().catch((error) => {
+    logger.error('SYSTEM', 'Fatal error in main', {}, error instanceof Error ? error : undefined);
+    process.exit(0);  // Exit 0: don't block Claude Code, don't leave Windows Terminal tabs open
+  });
 }
